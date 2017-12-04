@@ -1,0 +1,9 @@
+<aura:component >
+    <aura:attribute name="productItem" type="Product__c"/>
+
+    <tr>
+        <td>{!v.productItem.Name}</td>
+        <td>{!v.productItem.QuantityType__c}</td>
+        <td>{!v.productItem.RetailPrice__c}</td>
+    </tr>
+</aura:component>

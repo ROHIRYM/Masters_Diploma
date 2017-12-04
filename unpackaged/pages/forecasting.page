@@ -1,0 +1,185 @@
+<apex:page controller="ForecastingController" docType="html-5.0">
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    
+    
+    <apex:form >
+        <apex:pageBlock >
+            <apex:pageBlockSection columns="2">
+                <apex:selectList label="Choose trading point:" size="1" value="{!tpId}">
+                    <apex:selectOptions value="{!dynamiclist}"></apex:selectOptions>
+                </apex:selectList>
+                <apex:selectList label="Choose forecasting method:" value="{!forecastingMethod}" size="1">
+                    <apex:selectOption itemValue="ALL" itemLabel="All"/>
+                    <apex:selectOption itemValue="MA" itemLabel="Moving Average"/>
+                    <apex:selectOption itemValue="LS" itemLabel="Least Squares"/>
+                    <apex:selectOption itemValue="ES" itemLabel="Expotential Smoothing"/>
+                </apex:selectList>
+                <apex:inputField label="Start date:" value="{!startBuy.DateTime__c}"/>
+                <apex:inputField label="Finish date:" value="{!finishBuy.DateTime__c}"/>
+                <apex:selectList label="Choose forecasting periods:" value="{!forecastingPeriod}" size="1">
+                    <apex:selectOption itemValue="years" itemLabel="Years"/>
+                    <apex:selectOption itemValue="monts" itemLabel="Months"/>
+                    <apex:selectOption itemValue="days" itemLabel="Days"/>
+                </apex:selectList>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection columns="3">
+                <apex:outputText ></apex:outputText>
+                <apex:commandButton value="Make forecast" action="{!forecast}" reRender="forecasts" oncomplete="showForecasts()"/>
+                <apex:commandButton value="Cancel" action="{!cancel}" immediate="true" reRender="forecasts"/>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+    
+    <apex:outputPanel id="forecasts">
+    
+        <script type="text/javascript">
+            function showForecasts() {                   
+                google.charts.load('current', {'packages':['corechart']});
+                google.charts.setOnLoadCallback(drawChartOne);
+                
+                google.charts.load('current', {'packages':['corechart']});
+                google.charts.setOnLoadCallback(drawChartTwo);
+                
+                google.charts.load('current', {'packages':['corechart']});
+                google.charts.setOnLoadCallback(drawChartThree);
+            }
+            
+            function drawChartOne() {
+                var ma3 = JSON.parse('{!ma3ForecastJ}');
+                var ma5 = JSON.parse('{!ma5ForecastJ}');
+                var ds = JSON.parse('{!datesJ}');
+                var ss = JSON.parse('{!salesJ}');
+
+                var data = new google.visualization.DataTable();
+                data.addColumn('string', 'Date');
+                data.addColumn('number', 'Sales');
+                data.addColumn('number', 'MA period-3');
+                data.addColumn('number', 'MA period-5');
+                
+                data.addRows(ds.length + 1);
+                
+                for(var i = 0; i < ds.length; i++) {
+                    data.setCell(i, 0, ds[i]);
+                    data.setCell(i, 1, ss[i]);
+                    if (i < 2) {
+                        data.setCell(i, 2, null);
+                    } else {
+                        data.setCell(i, 2, ma3[i-2]);
+                    }
+                    if (i < 4) {
+                        data.setCell(i, 3, null);
+                    } else {
+                        data.setCell(i, 3, ma5[i-4]);
+                    }                    
+                }
+                data.setCell(ds.length, 0, '');
+                data.setCell(ds.length, 1, null);
+                data.setCell(ds.length, 2, ma3[ma3.length-1]);
+                data.setCell(ds.length, 3, ma5[ma5.length-1]);                    
+                
+                var options = {
+                  title: 'Moving average',
+                  curveType: 'function',
+                  legend: { position: 'bottom' }
+                };
+                
+                var chart = new google.visualization.LineChart(document.getElementById('curve_chart1'));
+                
+                chart.draw(data, options);
+            }
+            
+            function drawChartTwo() {
+                var ls = JSON.parse('{!lsForecastJ}');
+                var ds = JSON.parse('{!datesJ}');
+                var ss = JSON.parse('{!salesJ}');
+
+                var data = new google.visualization.DataTable();
+                data.addColumn('string', 'Date');
+                data.addColumn('number', 'Sales');
+                data.addColumn('number', 'Least squares');
+                
+                data.addRows(ds.length + 1);
+                
+                for(var i = 0; i < ds.length; i++) {
+                    data.setCell(i, 0, ds[i]);
+                    data.setCell(i, 1, ss[i]);
+                    if (i == 0) {
+                        data.setCell(i, 2, ls[0]);
+                    } else {
+                        data.setCell(i, 2, ls[0]+(ls[1]-ls[0])*(i)/(ds.length));
+                    }                   
+                }
+                data.setCell(ds.length, 0, '');
+                data.setCell(ds.length, 1, null);
+                data.setCell(ds.length, 2, ls[1]);
+                
+                var options = {
+                  title: 'Least squares',
+                  curveType: 'function',
+                  legend: { position: 'bottom' }
+                };
+                
+                var chart = new google.visualization.LineChart(document.getElementById('curve_chart2'));
+                
+                chart.draw(data, options);
+            }
+            
+            function drawChartThree() {
+                var es3 = JSON.parse('{!es3ForecastJ}');
+                var es2 = JSON.parse('{!es2ForecastJ}');
+                var ds = JSON.parse('{!datesJ}');
+                var ss = JSON.parse('{!salesJ}');
+
+                var data = new google.visualization.DataTable();
+                data.addColumn('string', 'Date');
+                data.addColumn('number', 'Sales');
+                data.addColumn('number', 'ES alfa-0.3');
+                data.addColumn('number', 'ES alpha-0.2');
+                
+                data.addRows(ds.length + 1);
+                
+                for(var i = 0; i < ds.length; i++) {
+                    data.setCell(i, 0, ds[i]);
+                    data.setCell(i, 1, ss[i]);
+                    if (i == 0) {
+                        data.setCell(i, 2, null);
+                        data.setCell(i, 3, null);
+                    } else {
+                        data.setCell(i, 2, es3[i-1]);
+                        data.setCell(i, 3, es2[i-1]);
+                    }                    
+                }
+                data.setCell(ds.length, 0, '');
+                data.setCell(ds.length, 1, null);
+                data.setCell(ds.length, 2, es3[es3.length-1]);
+                data.setCell(ds.length, 3, es2[es2.length-1]);
+                
+                var options = {
+                  title: 'Expotential smoothing',
+                  curveType: 'function',
+                  legend: { position: 'bottom' }
+                };
+                
+                var chart = new google.visualization.LineChart(document.getElementById('curve_chart3'));
+                
+                chart.draw(data, options);
+            }
+        </script>
+    
+        <apex:messages />
+        
+        <apex:pageBlock rendered="{!isMAVisible}" title="Moving average">
+            <div id="curve_chart1" style="width: 1050px; height: 500px"></div>
+        </apex:pageBlock>
+        
+        <apex:pageBlock rendered="{!isLSVisible}" title="Least squares">
+            <div id="curve_chart2" style="width: 1050px; height: 500px"></div>
+        </apex:pageBlock>
+        
+        <apex:pageBlock rendered="{!isESVisible}" title="Expotential smoothing">
+            <div id="curve_chart3" style="width: 1050px; height: 500px"></div>
+        </apex:pageBlock>
+    </apex:outputPanel>
+  
+</apex:page>

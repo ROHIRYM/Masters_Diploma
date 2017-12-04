@@ -1,0 +1,10 @@
+<aura:component >
+    <aura:attribute name="searchName" type="String"/>
+    <aura:registerEvent name="searchForProducts" type="c:FindProducts"/>
+
+    <h1 class="tableHeader">Products</h1>
+    <div class="slds-grid">
+
+        <lightning:input maxlength="30" placeholder="Search by name" label="" name="searchName" type="String" value="{!v.searchName}" onchange="{!c.searchProducts}"/>
+    </div>
+</aura:component>

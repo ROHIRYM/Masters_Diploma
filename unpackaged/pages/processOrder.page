@@ -1,0 +1,63 @@
+<apex:page controller="ProductsController" action="{!findAllProducts}" cache="false">
+
+    <script>
+        function search() {
+            makeSearch();
+        }
+        function refreshSum() {
+            refresh();
+        }
+    </script>
+
+    <apex:form >
+        <apex:pageBlock >
+            <apex:pageBlockSection columns="1">
+                <apex:inputField label="Search name:" value="{!searchProd.Name}" onkeyup="search()"/>               
+            </apex:pageBlockSection>
+            <apex:actionFunction name="makeSearch" action="{!findAllProducts}" reRender="prods"/>
+            <apex:actionFunction name="refresh" action="{!refreshSums}" reRender="selected"/>
+        </apex:pageBlock>
+        <apex:pageBlock id="prods" title="Found products:">
+            <apex:pageBlockTable rendered="{!allFoundProducts.size > 0}" value="{!allFoundProducts}" var="item">
+                <apex:column value="{!item.Name}"/>
+                <apex:column value="{!item.QuantityType__c}"/>            
+                <apex:column value="{!item.RetailPrice__c}"/>
+                <apex:column ><apex:commandButton value="Add" reRender="selected" action="{!addNewBuyProductJunction}">
+                    <apex:param name="prodId" value="{!item.Id}" assignTo="{!productId}"/>
+                </apex:commandButton></apex:column>
+            </apex:pageBlockTable>
+            <apex:pageBlockSection rendered="{!allFoundProducts.size == 0}">
+                <p>Nothing found</p>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        
+        <apex:PageBlock id="selected" title="Added products:">
+            <apex:pageBlockTable rendered="{!buyProductJunctionsWrappers.size > 0}" value="{!buyProductJunctionsWrappers}" var="item">
+                <apex:column value="{!item.product.Name}"/>
+                <apex:column value="{!item.product.QuantityType__c}"/>            
+                <apex:column value="{!item.product.RetailPrice__c}"/>
+                <apex:column headerValue="Quantity">
+                    <apex:inputField required="false" value="{!item.buyProductJunction.Quantity__c}" onchange="refreshSum()"/>
+                </apex:column>
+                <apex:column headerValue="Sum" value="{!item.sum}"/>  
+                <apex:column ><apex:commandButton value="Delete" reRender="selected" action="{!deleteBuyProductJunction}">
+                    <apex:param name="prodId" value="{!item.product.Id}" assignTo="{!productId}"/>
+                </apex:commandButton></apex:column>             
+            </apex:pageBlockTable>
+            <apex:pageBlockSection >
+                <apex:outputText rendered="{!buyProductJunctionsWrappers.size > 0}" label="Sum:">{!allSum} грн.</apex:outputText>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection rendered="{!buyProductJunctionsWrappers.size == 0}">
+                <p>Nothing added</p>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection >
+            <apex:selectList rendered="{!buyProductJunctionsWrappers.size > 0}" label="Choose employee:" size="1" value="{!employeeId}">
+                <apex:selectOptions value="{!dynamiclist}"></apex:selectOptions>
+            </apex:selectList>
+            </apex:pageBlockSection>
+            <apex:commandButton rendered="{!buyProductJunctionsWrappers.size > 0}" reRender="selected" value="Save" action="{!saveOrder}"/>
+            <apex:pageMessages />            
+        </apex:PageBlock>
+    </apex:form>
+
+</apex:page>
